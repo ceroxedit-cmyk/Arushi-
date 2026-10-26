@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arushi AI Assistant</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        header {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .avatar-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+        }
+        .title-group h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
+        .title-group p { font-size: 12px; color: #94a3b8; }
+        
+        .status-badge {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid #6366f1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #c7d2fe;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .main-container {
+            flex: 1;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        /* Glowing Orb Visualizer */
+        .orb-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .orb {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #818cf8, #4f46e5 60%, #312e81 100%);
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.4);
+            transition: transform 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+        .orb.active {
+            animation: orbActive 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes orbActive {
+            0% { transform: scale(1); box-shadow: 0 0 30px rgba(168, 85, 247, 0.6); }
+            100% { transform: scale(1.12); box-shadow: 0 0 60px rgba(236, 72, 153, 0.9); }
+        }
+        .orb-ring {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 2px dashed rgba(168, 85, 247, 0.4);
+            animation: spin 10s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .transcript-box {
+            width: 100%;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 16px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #cbd5e1;
+            backdrop-filter: blur(10px);
+        }
+        .transcript-box p { margin-bottom: 8px; }
+        .transcript-box .user { color: #93c5fd; }
+        .transcript-box .arushi { color: #f472b6; }
+        .transcript-box .action { color: #facc15; font-style: italic; }
+
+        .controls-area {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .chips-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .chips-container::-webkit-scrollbar { display: none; }
+        .chip {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            white-space: nowrap;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .chip:hover { background: rgba(255, 255, 255, 0.15); }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-area">
+            <div class="avatar-circle">A</div>
+            <div class="title-group">
+                <h1>Arushi AI</h1>
+                <p>Multilingual Voice & App Control</p>
+            </div>
+        </div>
+        <div class="status-badge" id="statusBadge">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Ready</span>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="orb-container" id="orbContainer" onclick="toggleConnection()">
+            <div class="orb-ring"></div>
+            <div class="orb" id="orb"></div>
+        </div>
+
+        <div class="transcript-box" id="transcriptBox">
+            <p class="arushi"><strong>Arushi:</strong> Namaste! Tap the orb or Connect to start talking in any language (Hindi, English, Hinglish, Marathi, etc.).</p>
+        </div>
+    </div>
+
+    <div class="controls-area">
+        <div class="chips-container">
+            <div class="chip" onclick="sendQuickCommand('WhatsApp kholo')">📱 WhatsApp kholo</div>
+            <div class="chip" onclick="sendQuickCommand('Open YouTube')">▶️ Open YouTube</div>
+            <div class="chip" onclick="sendQuickCommand('Mummy ko call karo')">📞 Call Mom</div>
+            <div class="chip" onclick="sendQuickCommand('Hindi mein baat karo')">🇮🇳 Hindi mein baat karo</div>
+            <div class="chip" onclick="sendQuickCommand('Open Settings')">⚙️ Open Settings</div>
+        </div>
+        <button class="btn-primary" id="connectBtn" onclick="toggleConnection()">Connect & Start Voice</button>
+    </div>
+
+    <script>
+        let ws = null;
+        let audioContext = null;
+        let mediaStream = null;
+        let processor = null;
+        let isConnected = false;
+
+        const statusBadge = document.getElementById('statusBadge');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const connectBtn = document.getElementById('connectBtn');
+        const orb = document.getElementById('orb');
+        const transcriptBox = document.getElementById('transcriptBox');
+
+        function logMessage(sender, text, type = '') {
+            const p = document.createElement('p');
+            p.className = type || sender.toLowerCase();
+            p.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            transcriptBox.appendChild(p);
+            transcriptBox.scrollTop = transcriptBox.scrollHeight;
+        }
+
+        function updateStatus(state, text, dotColor = '#22c55e') {
+            statusText.textContent = text;
+            statusDot.style.background = dotColor;
+            if (state === 'connected') {
+                orb.classList.add('active');
+                connectBtn.textContent = 'Disconnect Voice';
+            } else {
+                orb.classList.remove('active');
+                connectBtn.textContent = 'Connect & Start Voice';
+            }
+        }
+
+        async function toggleConnection() {
+            if (isConnected) {
+                disconnectGemini();
+            } else {
+                await connectGemini();
+            }
+        }
+
+        async function connectGemini() {
+            const apiKey = window.GEMINI_API_KEY || '';
+            if (!apiKey) {
+                logMessage('System', 'API Key missing. Please configure GEMINI_API_KEY in secrets.', 'action');
+                updateStatus('error', 'API Key Missing', '#ef4444');
+                return;
+            }
+
+            updateStatus('connecting', 'Connecting...', '#eab308');
+            logMessage('System', 'Connecting to Arushi AI (Gemini Live)...');
+
+            try {
+                const host = 'generativelanguage.googleapis.com';
+                const path = '/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent';
+                const url = `wss://${host}${path}?key=${apiKey}`;
+
+                ws = new WebSocket(url);
+
+                ws.onopen = () => {
+                    isConnected = true;
+                    updateStatus('connected', 'Live & Listening', '#22c55e');
+                    logMessage('Arushi', 'Namaste! I am Arushi. Speak to me in any language or give me a command.');
+                    sendInitialSetup();
+                    startAudioCapture();
+                };
+
+                ws.onmessage = async (event) => {
+                    let data = event.data;
+                    if (data instanceof Blob) {
+                        data = await data.text();
+                    }
+                    try {
+                        const response = JSON.parse(data);
+                        handleServerMessage(response);
+                    } catch (e) {
+                        console.error('Error parsing WS message', e);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error', error);
+                    logMessage('System', 'Connection error occurred.', 'action');
+                    updateStatus('error', 'Error', '#ef4444');
+                };
+
+                ws.onclose = () => {
+                    disconnectGemini();
+                    logMessage('System', 'Disconnected from Arushi AI.');
+                };
+
+            } catch (e) {
+                console.error(e);
+                updateStatus('error', 'Failed', '#ef4444');
+                logMessage('System', `Failed to connect: ${e.message}`, 'action');
+            }
+        }
+
+        function disconnectGemini() {
+            isConnected = false;
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(t => t.stop());
+                mediaStream = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            updateStatus('disconnected', 'Disconnected', '#94a3b8');
+        }
+
+        function sendInitialSetup() {
+            const setupMessage = {
+                setup: {
+                    model: "models/gemini-2.5-flash-native-audio-preview-12-2025",
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Kore" }
+                            }
+                        }
+                    },
+                    systemInstruction: {
+                        parts: [{
+                            text: "You are Arushi, an advanced, friendly, and natural multilingual AI voice assistant. You support and fluently speak Hindi, English, Hinglish, Marathi, Gujarati, Bengali, Tamil, Telugu, Kannada, Malayalam, Punjabi, Urdu, and all languages supported by Gemini Live. Automatically detect the user's language and respond in the exact same language (e.g. Hindi if user speaks Hindi, English if user speaks English, Hinglish if user speaks Hinglish, Marathi if Marathi, etc.). You can also execute device actions and tool calls when requested (such as opening WhatsApp, opening apps, making phone calls, calling contacts by name, opening URLs, and adjusting settings). When a tool is called, execute it and continue the conversation naturally with voice."
+                        }]
+                    },
+                    tools: [{
+                        functionDeclarations: [
+                            {
+                                name: "openWhatsApp",
+                                description: "Open WhatsApp messenger application on the device.",
+                                parameters: { type: "OBJECT", properties: {} }
+                            },
+                            {
+                                name: "openApp",
+                                description: "Open an installed application by name (e.g. YouTube, Instagram, Chrome, Settings).",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        appName: { type: "STRING", description: "Name of the app to open" }
+                                    },
+                                    required: ["appName"]
+                                }
+                            },
+                            {
+                                name: "openUrl",
+                                description: "Open a web URL in the browser.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        url: { type: "STRING", description: "URL to open" }
+                                    },
+                                    required: ["url"]
+                                }
+                            },
+                            {
+                                name: "makeCall",
+                                description: "Make a phone call to a specified phone number.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        phoneNumber: { type: "STRING", description: "Phone number to dial" }
+                                    },
+                                    required: ["phoneNumber"]
+                                }
+                            },
+                            {
+                                name: "callContact",
+                                description: "Search device contacts by name and call them.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        contactName: { type: "STRING", description: "Name of the contact to call (e.g. Mom, Rahul)" }
+                                    },
+                                    required: ["contactName"]
+                                }
+                            }
+                        ]
+                    }]
+                }
+            };
+            ws.send(JSON.stringify(setupMessage));
+        }
+
+        async function startAudioCapture() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, sampleRate: 16000 } });
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+                processor.onaudioprocess = (e) => {
+                    if (!isConnected || !ws) return;
+                    const inputData = e.inputBuffer.getChannelData(0);
+                    const pcm16 = new Int16Array(inputData.length);
+                    for (let i = 0; i < inputData.length; i++) {
+                        let s = Math.max(-1, Math.min(1, inputData[i]));
+                        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                    }
+                    const base64Audio = btoa(String.fromCharCode.apply(null, new Uint8Array(pcm16.buffer)));
+                    
+                    const audioMessage = {
+                        realtimeInput: {
+                            mediaChunks: [{
+                                mimeType: "audio/pcm;rate=16000",
+                                data: base64Audio
+                            }]
+                        }
+                    };
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify(audioMessage));
+                    }
+                };
+
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+            } catch (e) {
+                console.error("Microphone access error", e);
+                logMessage('System', 'Microphone access denied or unavailable.', 'action');
+            }
+        }
+
+        function handleServerMessage(response) {
+            if (response.serverContent) {
+                const modelTurn = response.serverContent.modelTurn;
+                if (modelTurn && modelTurn.parts) {
+                    for (const part of modelTurn.parts) {
+                        if (part.text) {
+                            logMessage('Arushi', part.text, 'arushi');
+                        }
+                        if (part.inlineData && part.inlineData.data) {
+                            playAudioChunk(part.inlineData.data);
+                        }
+                    }
+                }
+            }
+
+            if (response.toolCall) {
+                const functionCalls = response.toolCall.functionCalls;
+                if (functionCalls && functionCalls.length > 0) {
+                    for (const call of functionCalls) {
+                        executeToolCall(call);
+                    }
+                }
+            }
+        }
+
+        function executeToolCall(call) {
+            const name = call.name;
+            const args = call.args || {};
+            const callId = call.id;
+
+            logMessage('System', `Executing tool: ${name} (${JSON.stringify(args)})`, 'action');
+
+            let result = "Success";
+            if (window.AndroidBridge) {
+                try {
+                    if (name === 'openWhatsApp') {
+                        window.AndroidBridge.openWhatsApp();
+                        result = "WhatsApp opened successfully.";
+                    } else if (name === 'openApp') {
+                        window.AndroidBridge.openApp(args.appName || '');
+                        result = `Opened app ${args.appName}`;
+                    } else if (name === 'openUrl') {
+                        window.AndroidBridge.openUrl(args.url || '');
+                        result = `Opened URL ${args.url}`;
+                    } else if (name === 'makeCall') {
+                        window.AndroidBridge.makeCall(args.phoneNumber || '');
+                        result = `Initiated call to ${args.phoneNumber}`;
+                    } else if (name === 'callContact') {
+                        result = window.AndroidBridge.callContact(args.contactName || '');
+                    }
+                } catch (e) {
+                    result = `Error executing action: ${e.message}`;
+                }
+            } else {
+                if (name === 'openWhatsApp') {
+                    window.open('https://wa.me/', '_blank');
+                    result = "Opened WhatsApp web link.";
+                } else if (name === 'openUrl') {
+                    window.open(args.url, '_blank');
+                    result = `Opened URL ${args.url}`;
+                } else if (name === 'makeCall') {
+                    window.location.href = `tel:${args.phoneNumber}`;
+                    result = `Initiated dialer for ${args.phoneNumber}`;
+                } else {
+                    result = "Action simulated in browser.";
+                }
+            }
+
+            const toolResponseMessage = {
+                toolResponse: {
+                    functionResponses: [{
+                        response: { output: result },
+                        id: callId
+                    }]
+                }
+            };
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(toolResponseMessage));
+            }
+        }
+
+        function playAudioChunk(base64Data) {
+            try {
+                const binaryString = atob(base64Data);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const pcm16 = new Int16Array(bytes.buffer);
+                const float32 = new Float32Array(pcm16.length);
+                for (let i = 0; i < pcm16.length; i++) {
+                    float32[i] = pcm16[i] / 32768.0;
+                }
+
+                if (!audioContext) return;
+                const buffer = audioContext.createBuffer(1, float32.length, 24000);
+                buffer.getChannelData(0).set(float32);
+
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioContext.destination);
+                source.start();
+            } catch (e) {
+                console.error("Audio playback error", e);
+            }
+        }
+
+        function sendQuickCommand(cmdText) {
+            logMessage('User', cmdText, 'user');
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const msg = {
+                    clientContent: {
+                        turns: [{
+                            role: "user",
+                            parts: [{ text: cmdText }]
+                        }],
+                        turnComplete: true
+                    }
+                };
+                ws.send(JSON.stringify(msg));
+            } else {
+                logMessage('System', 'Please connect voice first before sending commands.', 'action');
+            }
+        }
+    </script>
+</body>
+</html>
